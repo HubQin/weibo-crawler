@@ -21,8 +21,7 @@ class PostCrawler(object):
 
     # 获取每一页数据
     def getPage(self, db, user, page):
-        # url = postListUrlFormat.format(uid = user['uid'], value = user['value'], containerid = user['containerid'], page = page)
-        url = 'https://m.weibo.cn/api/container/getIndex?uid=1134424202&luicode=10000011&lfid=1076031134424202&type=uid&value=1134424202&containerid=1076031134424202&since_id=4507392476551679'
+        url = postListUrlFormat.format(uid = user['uid'], value = user['value'], containerid = user['containerid'], page = page)
 
         data = requests.get(url, headers = postsHeaders)
         data.encoding = 'utf-8'
@@ -32,15 +31,14 @@ class PostCrawler(object):
     def parseCard(self, content, user, latestTimestamp):
         if('mblog' in content.keys()):
             addTime = getTimestamp(content['mblog']['created_at'])
-            print('微博添加时间%s' % addTime)
 
             if addTime > latestTimestamp:
 
                 if db.postExists(user['uid'], content['mblog']['id'], 'posts'):
-                    print('POST ID: %s 已在数据库中，跳过\n' % content['mblog']['id'])
+                    print('POST ID: [%s] 已在数据库中，跳过\n...' % content['mblog']['id'])
                     return None
 
-                print('POST ID: %s 开始抓取\n' % content['mblog']['id'])
+                print('抓取 POST ID: [%s] ...' % content['mblog']['id'])
                 kwPost = {}
                 kwPost['user_id'] = user['uid']
                 kwPost['add_time'] = addTime
@@ -98,6 +96,13 @@ if __name__ == '__main__':
 
     for user in users:
 
+        # 如果用户还未存入数据表，保存之
+        if not db.userExists(user['uid']):
+            userData = {}
+            userData['user_id'] = user['uid']
+            userData['user_name'] = user['name']
+            db.insert_data('weibo_users', **userData)
+
         if user['is_enable'] == False:
             print('%s 用户设置为不抓取，跳过...\n' % user['name'])
             continue
@@ -108,10 +113,10 @@ if __name__ == '__main__':
         page = 1
 
         timeLocal = getDate(latestTimestamp)
-        print("=====开始抓取用户：%s,时间:[%s]之后的微博=====\n" % (user['name'], timeLocal))
+        print("=====开始抓取用户：【%s】,时间:[%s]之后的微博=====\n" % (user['name'], timeLocal))
 
         while True:
-            print("=====开始抓取第%s页的微博=====" % page)
+            print("=====开始抓取【第%s页】=====" % page)
             
             try: 
                 pageData = postCrawler.getPage(db, user, page)
@@ -127,7 +132,7 @@ if __name__ == '__main__':
                     break
 
             except Exception as e:
-                print("结束抓取用户：%s，第%s页，原因：%s\n" % (user['name'], page, e))
+                print("结束抓取用户：【%s】，【第%s页】，原因：%s\n" % (user['name'], page, e))
                 break
 
             page = page + 1

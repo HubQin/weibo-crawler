@@ -70,7 +70,13 @@ class Db(object):
         sql =  "SELECT id FROM `%s`  WHERE `user_id`=%s AND `post_id`=%s LIMIT 1" % (table, uid, post_id)
         cur = self.conn.cursor() 
         cur.execute(sql)
-        print(cur.rowcount)
+        return bool(cur.rowcount)
+
+    # 查询用户是否存在
+    def userExists(self, uid):
+        sql =  "SELECT id FROM `%s`  WHERE `user_id`=%s LIMIT 1" % ('weibo_users', uid)
+        cur = self.conn.cursor() 
+        cur.execute(sql)
         return bool(cur.rowcount)
 
     # 关闭连接
